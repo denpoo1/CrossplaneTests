@@ -1,6 +1,6 @@
 import unittest
-import k8s as k8s
 import path_searcher as path_builder
+from k8s import KubernetesResourceManager
 
 manifests_path = path_builder.get_manifest_path()
 
@@ -21,15 +21,15 @@ class TestMain(unittest.TestCase):
     # Delete all Crossplane components created during this test, including those created by Crossplane itself.
     def test_managed_resource_creation(self):
         # given
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
 
         # when
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
-        response_json = k8s.send_request_and_get_json_response("GET",
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                     "apis/compute.crossplane.io/v1alpha1/namespaces/default/dropletclaims/test-droplet-claim-1")
 
         # then
@@ -40,9 +40,9 @@ class TestMain(unittest.TestCase):
         self.assertEqual(conditions.get("Ready", {}).get("status"), "False", "'Ready' condition is not True")
 
         # post condition
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
 
     # Test Case 4: Provider Managed Resource Update Test
@@ -58,11 +58,11 @@ class TestMain(unittest.TestCase):
     # Delete all Crossplane components created during this test, including those created by Crossplane itself.
     def test_managed_resource_updating(self):
         # given
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
 
         # when
@@ -70,10 +70,10 @@ class TestMain(unittest.TestCase):
             "/spec/parameters/size": "s-2vcpu-2gb",
             "/spec/parameters/image": "ubuntu-20-04-x64"
         }
-        k8s.update_cluster_resource_parameters(
+        KubernetesResourceManager.update_cluster_resource_parameters(
             f"{manifests_path}/digital_ocean/digital_ocean_claim_update.yaml",
             updates)
-        response_json = k8s.send_request_and_get_json_response("GET",
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                     "apis/compute.crossplane.io/v1alpha1/namespaces/default/dropletclaims/test-droplet-claim-1")
 
         # then
@@ -85,11 +85,11 @@ class TestMain(unittest.TestCase):
         self.assertEqual(conditions.get("Ready", {}).get("status"), "True", "'Ready' condition is not True")
 
         # post condition
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
 
     # Test Case 5: Provider Managed Resource Deletion Test
@@ -105,26 +105,26 @@ class TestMain(unittest.TestCase):
     # Delete all Crossplane components created during this test, including those created by Crossplane itself.
     def test_managed_resource_deleting(self):
         # given
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
 
         # when
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
-        response = k8s.send_request_and_get_response("GET",
+        response = KubernetesResourceManager.send_request_and_get_response("GET",
                                                           "apis/compute.crossplane.io/v1alpha1/namespaces/default/dropletclaims/test-droplet-claim-1")
 
         # then
         self.assertEqual(response.status_code, 404)
 
         # post condition
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
 
     # Test Case 6: Provider Permission Limitation Test
@@ -132,26 +132,26 @@ class TestMain(unittest.TestCase):
     # Verify that the Provider has access only to required resources and cannot access unauthorized resources.
     def test_provider_permission_limitation(self):
         # when
-        response_json = k8s.send_request_and_get_json_response("GET",
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                     "/apis/pkg.crossplane.io/v1/providers/provider-digitalocean")
         full_provider_name = response_json["status"]["currentRevision"]
-        provider_cluster_role_json = k8s.send_request_and_get_json_response(
+        provider_cluster_role_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", f"/apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane:provider:{full_provider_name}:system")
 
         # then
         for rule in provider_cluster_role_json['rules']:
-            api_groups = rule.get('apiGroups', [])
-            self.assertNotIn('apps', api_groups, "'apps' should not be in apiGroups")
+            api_groups = rule.get('api_groups', [])
+            self.assertNotIn('apps', api_groups, "'apps' should not be in api_groups")
 
     # Test Case 7: Role Aggregation Functionality Test
     # Objective:
     # Verify Crossplane’s correct use of aggregated roles for accessing provider resources.
     def test_role_aggregation_functionality(self):
         # when
-        response_json = k8s.send_request_and_get_json_response("GET",
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                     "/apis/pkg.crossplane.io/v1/providers/provider-digitalocean")
         full_provider_name = response_json["status"]["currentRevision"]
-        provider_cluster_role_json = k8s.send_request_and_get_json_response("GET",
+        provider_cluster_role_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                                  "/apis/rbac.authorization.k8s.io/v1/clusterroles")
 
         # Filter roles by provider prefix
@@ -177,19 +177,19 @@ class TestMain(unittest.TestCase):
     # Delete all Crossplane components created for this test, including all Crossplane components created by Crossplane itself.
     def test_restricted_secret_access(self):
         # when
-        response_json = k8s.send_request_and_get_json_response(
+        response_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", "/apis/pkg.crossplane.io/v1/providers/provider-digitalocean"
         )
         full_provider_name = response_json["status"]["currentRevision"]
 
         # Fetch the ClusterRoles for system, crossplane, and crossplane-rbac-manager
-        provider_role = k8s.send_request_and_get_json_response(
+        provider_role = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", f"/apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane:provider:{full_provider_name}:system"
         )
-        crossplane_role = k8s.send_request_and_get_json_response(
+        crossplane_role = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", "/apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane"
         )
-        rbac_manager_role = k8s.send_request_and_get_json_response(
+        rbac_manager_role = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", "/apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane-rbac-manager"
         )
 
@@ -199,7 +199,7 @@ class TestMain(unittest.TestCase):
             return [
                 {
                     "verbs": rule.get("verbs", []),
-                    "apiGroups": rule.get("apiGroups", []),
+                    "api_groups": rule.get("api_groups", []),
                     "resources": rule.get("resources", []),
                 }
                 for rule in role_json.get("rules", [])
@@ -222,11 +222,11 @@ class TestMain(unittest.TestCase):
             "Provider role should have all permissions (*) for secrets."
         )
         self.assertIn(
-            "", secret_access_roles["provider"][0]["apiGroups"],
+            "", secret_access_roles["provider"][0]["api_groups"],
             "Provider role should have access to the empty API group for secrets."
         )
         self.assertIn(
-            "coordination.k8s.io", secret_access_roles["provider"][0]["apiGroups"],
+            "coordination.k8s.io", secret_access_roles["provider"][0]["api_groups"],
             "Provider role should have access to 'coordination.k8s.io' API group for secrets."
         )
         self.assertEqual(
@@ -239,7 +239,7 @@ class TestMain(unittest.TestCase):
             "Crossplane role should have limited permissions for secrets."
         )
         self.assertEqual(
-            secret_access_roles["crossplane"][0]["apiGroups"],
+            secret_access_roles["crossplane"][0]["api_groups"],
             [""],
             "Crossplane role should have access only to the empty API group for secrets."
         )
@@ -259,8 +259,8 @@ class TestMain(unittest.TestCase):
         xrd_yaml_path = f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml"
 
         # when
-        k8s.create_resource_from_yaml(xrd_yaml_path)
-        response_json = k8s.send_request_and_get_json_response(
+        KubernetesResourceManager.create_resource_from_yaml(xrd_yaml_path)
+        response_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", "/apis/apiextensions.crossplane.io/v1/compositeresourcedefinitions/xdroplets.compute.crossplane.io"
         )
 
@@ -271,7 +271,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(conditions.get("Offered", {}).get("status"), "True", "'Offered' condition is not True")
 
         # post condition
-        k8s.delete_resource_by_file(xrd_yaml_path)
+        KubernetesResourceManager.delete_resource_by_file(xrd_yaml_path)
 
     # Test Case 10: XRD Update Test
     # Objective: Ensure that an update to an existing XRD is applied correctly, reflecting the changes in the cluster.
@@ -282,10 +282,10 @@ class TestMain(unittest.TestCase):
     def test_xrd_updating(self):
         # given
         xrd_yaml_path = f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml"
-        k8s.create_resource_from_yaml(xrd_yaml_path)
+        KubernetesResourceManager.create_resource_from_yaml(xrd_yaml_path)
 
         # when
-        initial_response_json = k8s.send_request_and_get_json_response(
+        initial_response_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", "/apis/apiextensions.crossplane.io/v1/compositeresourcedefinitions/xdroplets.compute.crossplane.io"
         )
 
@@ -300,10 +300,10 @@ class TestMain(unittest.TestCase):
         updates = {
             "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/parameters/properties/image/default": "fedora"
         }
-        k8s.update_cluster_resource_parameters(xrd_yaml_path, updates)
+        KubernetesResourceManager.update_cluster_resource_parameters(xrd_yaml_path, updates)
 
         # Retrieve updated XRD
-        updated_response_json = k8s.send_request_and_get_json_response(
+        updated_response_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET", "/apis/apiextensions.crossplane.io/v1/compositeresourcedefinitions/xdroplets.compute.crossplane.io"
         )
 
@@ -315,7 +315,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(updated_default_image, "fedora", "Expected updated default image to be 'fedora'.")
 
         # post condition
-        k8s.delete_resource_by_file(xrd_yaml_path)
+        KubernetesResourceManager.delete_resource_by_file(xrd_yaml_path)
 
     # ==================================================================================
     # Test Case 11: XRD Deletion Test
@@ -335,11 +335,11 @@ class TestMain(unittest.TestCase):
     def test_xrd_deleting(self):
         # given
         xrd_yaml_path = f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml"
-        k8s.create_resource_from_yaml(xrd_yaml_path)
+        KubernetesResourceManager.create_resource_from_yaml(xrd_yaml_path)
 
         # when
-        k8s.delete_resource_by_file(xrd_yaml_path)
-        remove_response_json = k8s.send_request_and_get_json_response("GET",
+        KubernetesResourceManager.delete_resource_by_file(xrd_yaml_path)
+        remove_response_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                            "/apis/apiextensions.crossplane.io/v1/compositeresourcedefinitions/xdroplets.compute.crossplane.io")
 
         # then
@@ -366,18 +366,18 @@ class TestMain(unittest.TestCase):
     def test_xrd_cluster_role_aggregation(self):
         # given
         xrd_yaml_path = f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml"
-        k8s.create_resource_from_yaml(xrd_yaml_path)
+        KubernetesResourceManager.create_resource_from_yaml(xrd_yaml_path)
 
         # when
-        response_json = k8s.send_request_and_get_json_response("GET",
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                     "/apis/pkg.crossplane.io/v1/providers/provider-digitalocean")
         full_provider_name = response_json["status"]["currentRevision"]
 
-        provider_aggregate_to_edit_role_json = k8s.send_request_and_get_response("GET",
+        provider_aggregate_to_edit_role_json = KubernetesResourceManager.send_request_and_get_response("GET",
                                                                                       f"apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane:provider:{full_provider_name}:aggregate-to-edit")
-        provider_aggregate_to_view_role_json = k8s.send_request_and_get_response("GET",
+        provider_aggregate_to_view_role_json = KubernetesResourceManager.send_request_and_get_response("GET",
                                                                                       f"apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane:provider:{full_provider_name}:aggregate-to-view")
-        provider_aggregate_system_role_json = k8s.send_request_and_get_response("GET",
+        provider_aggregate_system_role_json = KubernetesResourceManager.send_request_and_get_response("GET",
                                                                                      f"apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane:provider:{full_provider_name}:system")
 
         # then
@@ -386,7 +386,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(provider_aggregate_system_role_json.status_code, 200)
 
         # post condition
-        k8s.delete_resource_by_file(xrd_yaml_path)
+        KubernetesResourceManager.delete_resource_by_file(xrd_yaml_path)
 
     # ==================================================================================
     # Test Case 14: Composition Update Test
@@ -408,10 +408,10 @@ class TestMain(unittest.TestCase):
     def test_xr_updating(self):
         # given
         xr_yaml_path = f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml"
-        k8s.create_resource_from_yaml(xr_yaml_path)
+        KubernetesResourceManager.create_resource_from_yaml(xr_yaml_path)
 
         # when
-        response_json = k8s.send_request_and_get_json_response(
+        response_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET",
             "/apis/apiextensions.crossplane.io/v1/compositions/xdroplet-composition"
         )
@@ -422,10 +422,10 @@ class TestMain(unittest.TestCase):
         updates = {
             "/spec/resources/0/base/spec/forProvider/size": "s-1vcpu-2gb"
         }
-        k8s.update_cluster_resource_parameters(xr_yaml_path, updates)
+        KubernetesResourceManager.update_cluster_resource_parameters(xr_yaml_path, updates)
 
         # then
-        response_updated_json = k8s.send_request_and_get_json_response(
+        response_updated_json = KubernetesResourceManager.send_request_and_get_json_response(
             "GET",
             "/apis/apiextensions.crossplane.io/v1/compositions/xdroplet-composition"
         )
@@ -434,7 +434,7 @@ class TestMain(unittest.TestCase):
                          "Updated default volume size should be 's-1vcpu-2gb'.")
 
         # post condition
-        k8s.delete_resource_by_file(xr_yaml_path)
+        KubernetesResourceManager.delete_resource_by_file(xr_yaml_path)
 
     # ==================================================================================
     # Test Case 19: CRUD Permission Test
@@ -456,33 +456,33 @@ class TestMain(unittest.TestCase):
     # ==============================================================================
     def test_role_permissions_by_name(self):
         # given
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/shared_resourses/role.yaml")
-        k8s.create_resource_from_yaml(
+        KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/shared_resourses/role_binding.yaml")
 
         # when
         role_name = "crossplane-edit"
         namespace = "default"
         role_api_path = f"/apis/rbac.authorization.k8s.io/v1/namespaces/{namespace}/roles/{role_name}"
-        response_json = k8s.send_request_and_get_json_response("GET", role_api_path)
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET", role_api_path)
 
         # then
         self.assertEqual(response_json['metadata']['name'], role_name, f"Role {role_name} does not exist")
         role_rules = response_json.get('rules', [])
         expected_permissions = [
-            {"resource": "events", "verbs": ["get", "list", "watch"], "apiGroup": ""},
-            {"resource": "secrets", "verbs": ["*"], "apiGroup": ""},
-            {"resource": "dropletclaims", "verbs": ["*"], "apiGroup": "compute.crossplane.io"}
+            {"resource": "events", "verbs": ["get", "list", "watch"], "api_group": ""},
+            {"resource": "secrets", "verbs": ["*"], "api_group": ""},
+            {"resource": "dropletclaims", "verbs": ["*"], "api_group": "compute.crossplane.io"}
         ]
 
-        def has_all_permissions_for_resource(resource, expected_verbs, apiGroup):
+        def has_all_permissions_for_resource(resource, expected_verbs, api_group):
             for rule in role_rules:
-                if rule.get("apiGroups", [None])[0] == apiGroup and resource in rule.get("resources", []):
+                if rule.get("api_groups", [None])[0] == api_group and resource in rule.get("resources", []):
                     if all(verb in rule.get("verbs", []) for verb in expected_verbs):
                         return True
             return False
@@ -490,19 +490,19 @@ class TestMain(unittest.TestCase):
         for permission in expected_permissions:
             resource = permission["resource"]
             expected_verbs = permission["verbs"]
-            apiGroup = permission["apiGroup"]
-            has_permission = has_all_permissions_for_resource(resource, expected_verbs, apiGroup)
+            api_group = permission["api_group"]
+            has_permission = has_all_permissions_for_resource(resource, expected_verbs, api_group)
             self.assertTrue(has_permission,
                             f"Role {role_name} does not have the expected permissions for {resource} with verbs {expected_verbs}")
 
         # post condition
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/shared_resourses/role.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/shared_resourses/role_binding.yaml")
 
     # ==================================================================================
@@ -527,14 +527,14 @@ class TestMain(unittest.TestCase):
         rbac_manager_role_path = "/apis/rbac.authorization.k8s.io/v1/clusterroles/crossplane-rbac-manager"
 
         # when
-        response_json = k8s.send_request_and_get_json_response("GET", provider_path)
+        response_json = KubernetesResourceManager.send_request_and_get_json_response("GET", provider_path)
         full_provider_name = response_json["status"]["currentRevision"]
 
         # Fetch the ClusterRoles for provider system, crossplane, and crossplane-rbac-manager
-        provider_cluster_role_json = k8s.send_request_and_get_json_response("GET", provider_role_path.format(
+        provider_cluster_role_json = KubernetesResourceManager.send_request_and_get_json_response("GET", provider_role_path.format(
             full_provider_name=full_provider_name))
-        crossplane_cluster_role_json = k8s.send_request_and_get_json_response("GET", crossplane_role_path)
-        crossplane_rbac_manager_cluster_role_json = k8s.send_request_and_get_json_response("GET",
+        crossplane_cluster_role_json = KubernetesResourceManager.send_request_and_get_json_response("GET", crossplane_role_path)
+        crossplane_rbac_manager_cluster_role_json = KubernetesResourceManager.send_request_and_get_json_response("GET",
                                                                                                 rbac_manager_role_path)
 
         # Prepare lists to store any 'configmaps' access rules
@@ -551,13 +551,13 @@ class TestMain(unittest.TestCase):
                 if "configmaps" in rule.get("resources", []):
                     configmap_access_rules.append({
                         "verbs": rule.get("verbs", []),
-                        "apiGroups": rule.get("apiGroups", []),
+                        "api_groups": rule.get("api_groups", []),
                         "resources": ["configmaps"]
                     })
                 if "configmaps.coordination.k8s.io" in rule.get("resources", []):
                     configmap_access_rules.append({
                         "verbs": rule.get("verbs", []),
-                        "apiGroups": rule.get("apiGroups", []),
+                        "api_groups": rule.get("api_groups", []),
                         "resources": ["configmaps.coordination.k8s.io"]
                     })
             return configmap_access_rules
@@ -574,9 +574,9 @@ class TestMain(unittest.TestCase):
                          "Expected one configmap access rule in provider_system.")
         self.assertEqual(configmap_access_roles["provider_system"][0]["verbs"], ["*"],
                          "provider_system should have all permissions (*) for configmaps.")
-        self.assertIn("", configmap_access_roles["provider_system"][0]["apiGroups"],
+        self.assertIn("", configmap_access_roles["provider_system"][0]["api_groups"],
                       "provider_system should have access to the empty API group for configmaps.")
-        self.assertIn("coordination.k8s.io", configmap_access_roles["provider_system"][0]["apiGroups"],
+        self.assertIn("coordination.k8s.io", configmap_access_roles["provider_system"][0]["api_groups"],
                       "provider_system should have access to 'coordination.k8s.io' API group for configmaps.")
 
         # Check crossplane role for expected access to 'configmaps'
@@ -585,7 +585,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(configmap_access_roles["crossplane"][0]["verbs"],
                          ['get', 'list', 'create', 'update', 'patch', 'watch', 'delete'],
                          "crossplane role should have limited permissions for configmaps.")
-        self.assertEqual(configmap_access_roles["crossplane"][0]["apiGroups"], ['', 'coordination.k8s.io'],
+        self.assertEqual(configmap_access_roles["crossplane"][0]["api_groups"], ['', 'coordination.k8s.io'],
                          "crossplane role should have access only to the empty API group for configmaps.")
 
         # Verify crossplane_rbac_manager has limited access to configmaps
@@ -597,11 +597,11 @@ class TestMain(unittest.TestCase):
 
         # post condition
         # Clean up roles if needed; assuming here that any roles created for the test are deleted, but if roles are part of permanent setup, this may be adjusted
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/shared_resourses/role.yaml")
-        k8s.delete_resource_by_file(
+        KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/shared_resourses/role_binding.yaml")

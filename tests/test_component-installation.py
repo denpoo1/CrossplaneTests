@@ -3,8 +3,7 @@ import asyncio
 import k8s as k8s
 import path_searcher as path_builder
 import provider as provider
-
-from helm import *
+from helm import CrossplaneHelmManager
 
 loop = asyncio.get_event_loop()
 manifests_path = path_builder.get_manifest_path()
@@ -26,7 +25,7 @@ class TestComponentInstallation(unittest.TestCase):
     # ==================================================================================
     def test_crossplane_installation(self):
         # given
-        loop.run_until_complete(install_crossplane_helm_chart())
+        loop.run_until_complete(CrossplaneHelmManager.install_crossplane_helm_chart())
 
         # when
         response_json = k8s.send_request(
@@ -42,7 +41,7 @@ class TestComponentInstallation(unittest.TestCase):
         self.assertIn("crossplane-rbac-manager", response_json['items'][1]['metadata']['name'])
         self.assertEqual(response_json['items'][1]['status']['phase'], "Running")
 
-        loop.run_until_complete(uninstall_crossplane_helm_chart())
+        loop.run_until_complete(CrossplaneHelmManager.uninstall_crossplane_helm_chart())
 
     # Test Case 2: Crossplane Provider Installation Test
     # Objective:

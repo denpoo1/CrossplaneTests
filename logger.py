@@ -1,19 +1,25 @@
 import logging
-import yaml
 
-config_file = "/resourses/config.yaml"
+class LoggerManager:
+    """
+    Class to manage logging configuration.
+    """
+    @staticmethod
+    def get_logger(config_data):
+        """
+        Set up and return a logger based on the configuration.
+        """
+        # Check if logging is enabled
+        logging_enabled = (
+                config_data.get('k8s', {}).get('logging', True)
+                or config_data.get('helm', {}).get('logging', True)
+                or config_data.get('provider', {}).get('logging', True)
+        )
 
-def load_config(config_file: str):
-    with open(config_file, 'r') as f:
-        return yaml.safe_load(f)
+        # Set logging level
+        if logging_enabled:
+            logging.basicConfig(level=logging.INFO)
+        else:
+            logging.disable(logging.CRITICAL)
 
-def setup_logger():
-    config = load_config(config_file)
-    logging_enabled = config.get('k8s', {}).get('logging', True) or config.get('helm', {}).get('logging', True) or config.get('provider', {}).get('logging', True)
-
-    if logging_enabled:
-        logging.basicConfig(level=logging.INFO)
-    else:
-        logging.disable(logging.CRITICAL)
-
-    return logging.getLogger(__name__)
+        return logging.getLogger(__name__)

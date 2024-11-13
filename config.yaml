@@ -1,0 +1,20 @@
+helm:
+  chart_name: "<your-chart-name>"
+  repo: "<your-repo-url>"
+  version: "<your-chart-version>"
+  namespace: "<your-namespace>"
+  install_crds: <true-or-false>
+  logging: <true-or-false>
+
+k8s:
+  kubeconfig_path: "<your-kubeconfig-path>"
+  kubecontext: "<your-kubecontext>"
+  cluster-uri: "<your-cluster-uri>"
+  admin-token: "<your-admin-token>"
+  logging: <true-or-false>
+
+provider:
+  name: "<your-provider-name>"
+  namespace: "<your-namespace>"
+  provider_config: "<your-provider-config-path>"
+  logging: <true-or-false>

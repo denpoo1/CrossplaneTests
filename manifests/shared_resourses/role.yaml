@@ -7,14 +7,12 @@ rules:
   - apiGroups: [""]
     resources: [secrets]
     verbs: ["*"]
-  # Access to events
-  - apiGroups: [""]  # Core API group
-    resources: [events]  # Resource type for Kubernetes events
-    verbs: [get, list, watch]  # Permissions to retrieve and monitor events
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [get, list, watch]
 
 
-  # Full access to DropletClaim
-  - apiGroups: [compute.crossplane.io]  # Custom API group for Crossplane resources
+  - apiGroups: [compute.crossplane.io]
     resources:
-      - dropletclaims  # Resource type for DropletClaims in Crossplane
-    verbs: ["*"]  # All permissions (create, read, update, delete) for DropletClaims
+      - dropletclaims
+    verbs: ["*"]
