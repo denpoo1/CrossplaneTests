@@ -1,0 +1,13 @@
+apiVersion: compute.do.crossplane.io/v1alpha1
+kind: Droplet
+metadata:
+  annotations:
+    crossplane.io/external-name: test-crossplane-droplet
+  name: test-crossplane-droplet
+spec:
+  forProvider:
+    image: ubuntu-20-04-x64
+    region: nyc1
+    size: s-1vcpu-1gb
+  providerConfigRef:
+    name: digital-ocean-provider-config

@@ -1,12 +1,16 @@
 import yaml
-from logger import load_config, setup_logger
+import path_searcher as path_builder
+from logger import LoggerManager
 from path_searcher import get_config_path
 from k8s import KubernetesResourceManager
 from config_loader import ConfigLoader
 
 config_data_file = get_config_path()
-config_data = ConfigLoader.load_config(config_data_file)
-logger = setup_logger()
+config_data = ConfigLoader.load_config()
+manifests_path = path_builder.get_manifest_path()
+
+# Setup logger
+logger = LoggerManager.get_logger(config_data)
 
 
 def install_digital_ocean_provider():
@@ -43,3 +47,11 @@ def uninstall_digital_ocean_provider():
         logger.info(f"Digital Ocean Provider '{provider_name}' deleted successfully.")
     except Exception as e:
         logger.error(f"Failed to delete Digital Ocean Provider '{provider_name}': {e}")
+
+
+def setup_digital_ocean_provider():
+    try:
+        KubernetesResourceManager.create_resource_from_yaml(
+            f"{manifests_path}/digital_ocean/digital_ocean_provider_config.yaml")
+    except Exception as e:
+        logger.error(f"Failed to Set Up Digital Ocean Provider: {e}")

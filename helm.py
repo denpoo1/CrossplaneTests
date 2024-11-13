@@ -1,13 +1,17 @@
+import path_searcher as path_builder
+
 from pyhelm3 import Client
-from logger import setup_logger
 from path_searcher import get_config_path
 from config_loader import ConfigLoader
+from logger import LoggerManager
+
+config_data_file = get_config_path()
+config_data = ConfigLoader.load_config()
+manifests_path = path_builder.get_manifest_path()
 
 # Setup logger
-config_data_file = get_config_path()
-logger = setup_logger()
+logger = LoggerManager.get_logger(config_data)
 
-config_data = ConfigLoader.load_config(config_data_file)
 
 class CrossplaneHelmManager:
 
@@ -16,19 +20,16 @@ class CrossplaneHelmManager:
         """
         Installs or upgrades the Crossplane Helm chart.
         """
-        # Используем конфигурацию, уже загруженную в начале
         helm_config_data = config_data.get('helm', {})
-        k8s_config_data = config_data.get('k8s', {})
 
-        kubeconfig_data = k8s_config_data.get('kubeconfig_data', '')
-        kubecontext = k8s_config_data.get('kubecontext', '')
+        kubeconfig_path = helm_config_data.get('kubeconfig_path')
         chart_name = helm_config_data.get('chart_name', 'crossplane')
         repo = helm_config_data.get('repo', 'https://charts.crossplane.io/stable')
         version = helm_config_data.get('version', '1.17.2')
         namespace = helm_config_data.get('namespace', 'crossplane-system')
         install_crds = helm_config_data.get('install_crds', True)
 
-        helm_client = Client(kubeconfig_data=kubeconfig_data, kubecontext=kubecontext)
+        helm_client = Client(kubeconfig=kubeconfig_path)
 
         try:
             chart = await helm_client.get_chart(chart_name, repo=repo, version=version)
@@ -55,11 +56,10 @@ class CrossplaneHelmManager:
         Uninstalls the Crossplane Helm chart from the Kubernetes cluster.
         """
         k8s_config_data = config_data.get('k8s', {})
-        kubeconfig_data = k8s_config_data.get('kubeconfig_data', '')
-        kubecontext = k8s_config_data.get('kubecontext', '')
+        kubeconfig_path = k8s_config_data.get('kubeconfig_path')
         namespace = config_data.get('helm', {}).get('namespace', 'crossplane-system')
 
-        helm_client = Client(kubeconfig_data=kubeconfig_data, kubecontext=kubecontext)
+        helm_client = Client(kubeconfig=kubeconfig_path)
 
         try:
             logger.info(f"Uninstalling release from namespace {namespace}...")

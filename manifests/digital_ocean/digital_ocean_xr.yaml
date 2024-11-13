@@ -19,7 +19,7 @@ spec:
             region: nyc1
             size: s-1vcpu-1gb
           providerConfigRef:
-            name: example
+            name: digital-ocean-provider-config
       patches:
         - fromFieldPath: "spec.parameters.image"
           toFieldPath: "spec.forProvider.image"

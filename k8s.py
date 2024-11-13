@@ -113,6 +113,44 @@ class KubernetesResourceManager:
             logger.error(f"Failed to delete resource from file '{yaml_file}': {e}")
 
     @staticmethod
+    def delete_cluster_resource_by_file(yaml_file):
+        """Deletes a Kubernetes resource using a YAML file."""
+        try:
+            # Load resource data from the YAML file
+            with open(yaml_file, 'r') as f:
+                resource_data = yaml.safe_load(f)
+
+            # Get basic resource information
+            resource_type = resource_data.get("kind")
+            resource_name = resource_data.get("metadata", {}).get("name")
+            api_version = resource_data.get("apiVersion")
+            admin_token = config_data.get('k8s', {}).get('admin-token', '')
+            api_url = config_data.get('k8s', {}).get('cluster-uri', '')
+
+            if not resource_type or not resource_name:
+                raise ValueError(f"Missing 'kind' or 'metadata.name' in the YAML file: {yaml_file}")
+
+            headers = {
+                'Authorization': f'Bearer {admin_token}',
+                "Content-Type": "application/json"
+            }
+
+            url = f"{api_url}/apis/{api_version}/{resource_type.lower()}s/{resource_name}"
+
+            # Send the DELETE request
+            response = requests.delete(url, headers=headers, verify=False)
+
+            # Check the response status
+            if response.status_code == 200 or response.status_code == 202:
+                logger.info(
+                    f"Resource '{resource_type}' named '{resource_name}' deleted successfully")
+            else:
+                logger.error(f"Failed to delete resource '{resource_name}': {response.text}")
+
+        except Exception as e:
+            logger.error(f"Failed to delete resource from file '{yaml_file}': {e}")
+
+    @staticmethod
     def update_resource_parameters_with_namespace_from_yaml(yaml_file_path, updates):
         """Updates a Kubernetes resource from a YAML file using PATCH request."""
         api_url = config_data.get('k8s', {}).get('cluster-uri', '')
