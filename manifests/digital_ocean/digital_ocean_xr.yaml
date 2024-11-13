@@ -1,0 +1,29 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xdroplet-composition
+  labels:
+    purpose: web-app
+spec:
+  compositeTypeRef:
+    apiVersion: compute.crossplane.io/v1alpha1
+    kind: XDroplet
+  resources:
+    - name: droplet
+      base:
+        apiVersion: compute.do.crossplane.io/v1alpha1
+        kind: Droplet
+        spec:
+          forProvider:
+            image: ubuntu-20-04-x64
+            region: nyc1
+            size: s-1vcpu-1gb
+          providerConfigRef:
+            name: example
+      patches:
+        - fromFieldPath: "spec.parameters.image"
+          toFieldPath: "spec.forProvider.image"
+        - fromFieldPath: "spec.parameters.region"
+          toFieldPath: "spec.forProvider.region"
+        - fromFieldPath: "spec.parameters.size"
+          toFieldPath: "spec.forProvider.size"

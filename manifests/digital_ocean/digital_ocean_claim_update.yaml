@@ -1,0 +1,10 @@
+apiVersion: compute.crossplane.io/v1alpha1
+kind: DropletClaim
+metadata:
+  name: test-droplet-claim-1
+  namespace: default
+spec:
+  parameters:
+    image: "ubuntu-20-04-x64"
+    region: "nyc1"
+    size: "s-2vcpu-2gb"
