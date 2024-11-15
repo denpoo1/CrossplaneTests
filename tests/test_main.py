@@ -1,40 +1,13 @@
 import time
 import unittest
-import asyncio
 import path_searcher as path_builder
-import provider as digital_ocean_provider
 
 from k8s import KubernetesResourceManager
-from helm import CrossplaneHelmManager
 
 manifests_path = path_builder.get_manifest_path()
 
 
 class TestMain(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        asyncio.run(CrossplaneHelmManager.install_crossplane_helm_chart())
-        digital_ocean_provider.install_digital_ocean_provider()
-        KubernetesResourceManager.create_resource_from_yaml(
-            f"{manifests_path}/digital_ocean/digital_ocean_secret.yaml")
-        time.sleep(10)
-        KubernetesResourceManager.create_resource_from_yaml(
-            f"{manifests_path}/digital_ocean/digital_ocean_provider_config.yaml")
-        time.sleep(50)
-
-    @classmethod
-    def tearDownClass(cls):
-        asyncio.run(CrossplaneHelmManager.uninstall_crossplane_helm_chart())
-        digital_ocean_provider.uninstall_digital_ocean_provider()
-        KubernetesResourceManager.delete_resource_by_file(
-            f"{manifests_path}/digital_ocean/digital_ocean_provider_config.yaml")
-        time.sleep(20)
-        KubernetesResourceManager.delete_resource_by_file(
-            f"{manifests_path}/digital_ocean/digital_ocean_secret.yaml")
-        KubernetesResourceManager.send_request_and_get_response(
-            "DELETE",
-            f"/api/v1/namespaces/crossplane-system")
 
     # Test Case 16: Composite Resource Claim Creation Test
     # Preconditions:
@@ -70,14 +43,13 @@ class TestMain(unittest.TestCase):
 
         conditions = {condition['type']: condition for condition in response_json['status']['conditions']}
         self.assertEqual(conditions.get("Synced", {}).get("status"), "True", "'Synced' condition is not True")
-        self.assertEqual(conditions.get("Ready", {}).get("status"), "False", "'Ready' condition is not True")
+        self.assertEqual(conditions.get("Ready", {}).get("status"), "True", "'Ready' condition is not True")
 
         # post condition
         KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml")
         KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
-        time.sleep(10)
 
     # Test Case 17: Composite Resource Claim Update Test
     # Preconditions:
@@ -105,8 +77,6 @@ class TestMain(unittest.TestCase):
             f"{manifests_path}/digital_ocean/digital_ocean_xr.yaml")
         KubernetesResourceManager.create_resource_from_yaml(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
-
-        time.sleep(10)
 
         # when
         updates = {
@@ -165,8 +135,6 @@ class TestMain(unittest.TestCase):
         # when
         KubernetesResourceManager.delete_resource_by_file(
             f"{manifests_path}/digital_ocean/digital_ocean_claim.yaml")
-
-        time.sleep(5)
 
         response = KubernetesResourceManager.send_request_and_get_response("GET",
                                                                            "apis/compute.crossplane.io/v1alpha1/namespaces/default/dropletclaims/test-droplet-claim-1")
@@ -349,7 +317,6 @@ class TestMain(unittest.TestCase):
         # given
         xrd_yaml_path = f"{manifests_path}/digital_ocean/digital_ocean_xrd.yaml"
         KubernetesResourceManager.create_resource_from_yaml(xrd_yaml_path)
-
 
         # when
         initial_response_json = KubernetesResourceManager.send_request_and_get_json_response(

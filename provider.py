@@ -36,14 +36,14 @@ def install_digital_ocean_provider():
 def uninstall_digital_ocean_provider():
     provider_config = config_data.get('provider', {})
 
-    provider_name = provider_config.get('name', 'digital_ocean')
-
-    dynamic_client = KubernetesResourceManager.get_dynamic_kubernetes_client()
+    provider_name = provider_config.get('name', 'provider-digitalocean')
 
     try:
-        provider_api = dynamic_client.resources.get(api_version='pkg.crossplane.io/v1', kind='Provider')
 
-        provider_api.delete(name=provider_name, namespace="crossplane-system")
+        KubernetesResourceManager.delete_cluster_resource_by_file(
+            f"{manifests_path}/digital_ocean/digital_ocean_provider.yaml"
+        )
+
         logger.info(f"Digital Ocean Provider '{provider_name}' deleted successfully.")
     except Exception as e:
         logger.error(f"Failed to delete Digital Ocean Provider '{provider_name}': {e}")
